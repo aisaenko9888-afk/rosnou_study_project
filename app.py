@@ -61,16 +61,27 @@ def index():
                 recommended_items.append("—")
                 similarity_values.append("—")
 
+           # Задание эмпирических диапазонов роста конверсии (10-30%) на основе отраслевых данных (Табл. 2.3 диплома)
             conv_uplift_min, conv_uplift_max = 0.10, 0.30
+            # Задание диапазонов роста среднего чека (5-20%) от персонализированных кросс-продаж (Гл. 3.2, 3.4)
             aov_uplift_min, aov_uplift_max = 0.05, 0.20
+            # Расчёт текущей ежемесячной выручки по формуле: посетители × конверсия × средний чек
             current_monthly_revenue = monthly_visitors * (current_conversion / 100) * avg_order_value
+            # Расчёт минимальной прогнозной выручки с учётом консервативного uplift-а конверсии и AOV
             projected_revenue_min = monthly_visitors * ((current_conversion * (1 + conv_uplift_min)) / 100) * avg_order_value * (1 + aov_uplift_min)
+            # Расчёт максимальной прогнозной выручки по оптимистичному сценарию внедрения ИИ
             projected_revenue_max = monthly_visitors * ((current_conversion * (1 + conv_uplift_max)) / 100) * avg_order_value * (1 + aov_uplift_max)
+            # Определение абсолютного прироста выручки при минимальном сценарии
             revenue_increase_min = projected_revenue_min - current_monthly_revenue
+            # Определение абсолютного прироста выручки при максимальном сценарии
             revenue_increase_max = projected_revenue_max - current_monthly_revenue
+            # Прогнозирование годовой финансовой выгоды на основе месячного прироста (минимальный сценарий)
             annual_benefit_min = revenue_increase_min * 12
+            # Прогнозирование максимальной годовой выгоды от ИИ-персонализации
             annual_benefit_max = revenue_increase_max * 12
+            # Расчёт минимального ROI по формуле из Гл. 2.2: (Выгоды − Затраты) / Затраты × 100%
             roi_min = round(((annual_benefit_min - ai_cost) / ai_cost) * 100, 2)
+            # Расчёт максимального ROI для демонстрации диапазона окупаемости проекта
             roi_max = round(((annual_benefit_max - ai_cost) / ai_cost) * 100, 2)
 
             fig, ax = plt.subplots(figsize=(6, 4))
