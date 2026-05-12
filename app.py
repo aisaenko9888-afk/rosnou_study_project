@@ -95,6 +95,7 @@ def index():
             buf = io.BytesIO()
             plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
             buf.seek(0)
+            #Из бинарника в base64, чтобы отобразить в HTML
             chart_base64 = base64.b64encode(buf.read()).decode('utf-8')
             plt.close(fig)
 
