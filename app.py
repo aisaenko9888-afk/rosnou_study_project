@@ -46,42 +46,46 @@ def index():
             monthly_visitors = int(request.form.get('visitors', 10000))
             ai_cost = float(request.form.get('ai_cost', 500000))
 
+            # Матрица: пользователь x товар
             user_item_matrix = df.pivot_table(index='user_id', columns='item_id', values='rating', fill_value=0)
+             # Вычисление косинусной близости между товарами (транспонируем матрицу)
             item_similarity = cosine_similarity(user_item_matrix.T)
-
+            # берём первый товар из матрицы
             target_idx = 0
+            # Создание списка пар (индекс, значение схожести) для всех товаров
             similarity_scores = list(enumerate(item_similarity[target_idx]))
+            # Сортировка по убыванию и выбор топ-5 похожих товаров, исключая сам товар 
             similarity_scores = sorted(similarity_scores, key=lambda x: x[1], reverse=True)[1:6]
             
             recommended_items = [user_item_matrix.columns[idx] for idx, _ in similarity_scores]
+            # Значение  схожести, округленное до 3 знаковв
             similarity_values = [round(float(score), 3) for _, score in similarity_scores]
             
-            # Дополняем до 5 элементов для стабильности шаблона
             while len(recommended_items) < 5:
                 recommended_items.append("—")
                 similarity_values.append("—")
 
-           # Задание эмпирических диапазонов роста конверсии (10-30%) на основе отраслевых данных (Табл. 2.3 диплома)
+            # Гл. 3.2/3.4: Эмпирические диапазоны роста конверсии;  "Базовый сценарий обеспечит рост на 25-30% в год"
             conv_uplift_min, conv_uplift_max = 0.10, 0.30
-            # Задание диапазонов роста среднего чека (5-20%) от персонализированных кросс-продаж (Гл. 3.2, 3.4)
+            # Гл. 3.4: Диапазоны роста среднего чека от кросс-продаж; используется для расчета мультипликативного эффекта
             aov_uplift_min, aov_uplift_max = 0.05, 0.20
-            # Расчёт текущей ежемесячной выручки по формуле: посетители × конверсия × средний чек
+            # Гл. 2.2: Расчет текущей ежемесячной выручки по формуле: посетители × конверсия × средний чек
             current_monthly_revenue = monthly_visitors * (current_conversion / 100) * avg_order_value
-            # Расчёт минимальной прогнозной выручки с учётом консервативного uplift-а конверсии и AOV
+            # Гл. 3.4: Консервативный прогноз выручки с учетом минимального uplift-а конверсии и AOV
             projected_revenue_min = monthly_visitors * ((current_conversion * (1 + conv_uplift_min)) / 100) * avg_order_value * (1 + aov_uplift_min)
-            # Расчёт максимальной прогнозной выручки по оптимистичному сценарию внедрения ИИ
+            # Гл. 3.4: Оптимистичный прогноз; текст: "Оптимистичный сценарий может обеспечить рост до 40-50% ежегодно"
             projected_revenue_max = monthly_visitors * ((current_conversion * (1 + conv_uplift_max)) / 100) * avg_order_value * (1 + aov_uplift_max)
-            # Определение абсолютного прироста выручки при минимальном сценарии
+            # Расчет абсолютного прироста выручки при минимальном сценарии для оценки операционных улучшений
             revenue_increase_min = projected_revenue_min - current_monthly_revenue
-            # Определение абсолютного прироста выручки при максимальном сценарии
+            # Расчет абсолютного прироста выручки при максимальном сценарии для оценки потенциала масштабирования
             revenue_increase_max = projected_revenue_max - current_monthly_revenue
-            # Прогнозирование годовой финансовой выгоды на основе месячного прироста (минимальный сценарий)
+            # Гл. 3.4: Прогноз годовой выгоды; текст: "Полный потенциал достигается через 18-24 месяца", упрощено до x12
             annual_benefit_min = revenue_increase_min * 12
-            # Прогнозирование максимальной годовой выгоды от ИИ-персонализации
+            # Прогноз максимальной годовой выгоды от ИИ-персонализации для стейкхолдеров
             annual_benefit_max = revenue_increase_max * 12
-            # Расчёт минимального ROI по формуле из Гл. 2.2: (Выгоды − Затраты) / Затраты × 100%
+            # Гл. 2.2: Классическая формула из текста: "ROI = (Общие выгоды - Общие затраты) / Общие затраты × 100%"
             roi_min = round(((annual_benefit_min - ai_cost) / ai_cost) * 100, 2)
-            # Расчёт максимального ROI для демонстрации диапазона окупаемости проекта
+            # Гл. 2.2/Табл. 2.6: Расчет максимального ROI; текст: "Рекомендательные системы: ROI 200-500%, окупаемость 8-18 мес"
             roi_max = round(((annual_benefit_max - ai_cost) / ai_cost) * 100, 2)
 
             fig, ax = plt.subplots(figsize=(6, 4))
@@ -94,8 +98,8 @@ def index():
             plt.tight_layout()
             buf = io.BytesIO()
             plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
-            buf.seek(0)
-            #Из бинарника в base64, чтобы отобразить в HTML
+            buf.seek(0) # Курсор перемещаем вначале
+            # Из бинарника в base64, чтобы отобразить в HTML
             chart_base64 = base64.b64encode(buf.read()).decode('utf-8')
             plt.close(fig)
 
