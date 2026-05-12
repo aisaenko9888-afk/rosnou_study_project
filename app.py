@@ -90,6 +90,7 @@ def index():
             ax.bar(categories, values, color=['#4a90e2', '#50c878', '#f5a623'])
             ax.set_ylabel('Выручка (руб)')
             ax.set_title('Прогноз экономической эффективности')
+            # Подгонка отступов, чтобы не обрезались заголоявки 
             plt.tight_layout()
             buf = io.BytesIO()
             plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
